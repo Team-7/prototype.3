@@ -1,0 +1,71 @@
+package com.dhliwayok.hopeworldwide;
+
+import android.app.Activity;
+import android.database.Cursor;
+import android.os.Bundle;
+import android.text.Editable;
+import android.text.util.Linkify;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AutoCompleteTextView;
+
+public class AutoCompleteActivity extends Activity {
+	
+	private HopeDbAdapter mDBAdabter;  // database adapter / helper
+    private StationAdapter mCursorAdapter;  // cursor adapter
+    private Cursor mItemCursor;    // and the cursor itself
+    
+	/* (non-Javadoc)
+	 * @see android.app.Activity#onCreate(android.os.Bundle)
+	 */
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		// TODO Auto-generated method stub
+		super.onCreate(savedInstanceState);
+		 setContentView(R.layout.autocompete);
+	        
+	        initCursorAdapter();
+	        initItemFilter();   
+	}
+
+	  // initialize the cursor adapter
+	 private void initCursorAdapter()
+	    {
+	        mDBAdabter = new HopeDbAdapter(this);
+	        
+	        mItemCursor = mDBAdabter.getStationCursor("");      
+	        startManagingCursor(mItemCursor);
+	        
+	        mCursorAdapter = new StationAdapter(getApplicationContext(), mItemCursor);
+	                
+	    }
+	    
+	    // initialize AutocompleteTextView
+	 private void initItemFilter()
+	    {
+	        final AutoCompleteTextView item_filter = (AutoCompleteTextView) findViewById(R.id.filter);
+	        item_filter.setAdapter(mCursorAdapter);
+	        item_filter.setThreshold(2);
+	        
+	        item_filter.setOnItemClickListener(new OnItemClickListener() {
+
+				@Override
+				public void onItemClick(AdapterView<?> parent, View view,
+						int position, long id) {
+					// TODO Auto-generated method stub
+					item_filter.setText(mCursorAdapter.createItem(mItemCursor));
+				}
+			});
+	  
+	       // item_filter.setText(mCursorAdapter.getName());
+
+	        //Linkify.addLinks(item_filter, Linkify.ALL);
+	        //Editable name=item_filter.getText();
+	        //Message.message(AutoCompleteActivity.this, name+"");
+	    }   
+    
+    
+    
+}

@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/RelativeLayout1"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#56aaff"
+    android:gravity="center"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/TextView1"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/TextView2"
+        android:textSize="15sp" />
+
+    <TextView
+        android:id="@+id/login_error"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/loginPassword"
+        android:padding="10dip"
+        android:textColor="#e30000"
+        android:textSize="17sp"
+        android:textStyle="bold" />
+
+    <EditText
+        android:id="@+id/loginPassword"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/loginEmail"
+        android:layout_centerHorizontal="true"
+        android:background="@drawable/shape"
+        android:ems="10"
+        android:hint="@string/password"
+        android:inputType="text"
+        android:password="true"
+        android:textColorLink="@android:color/black"
+        android:textSize="25sp" >
+
+        <requestFocus />
+    </EditText>
+
+    <EditText
+        android:id="@+id/loginEmail"
+        android:layout_width="300dp"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/loginPassword"
+        android:layout_below="@+id/TextView1"
+        android:background="@drawable/shape"
+        android:ems="10"
+        android:hint="@string/username"
+        android:inputType="text"
+        android:maxLength="10"
+        android:textColorLink="@android:color/black"
+        android:textSize="25sp" />
+
+    <TextView
+        android:id="@+id/TextView2"
+        android:layout_width="250dp"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:text="     \t\t\t\t Hope \n         World Wide"
+        android:textAlignment="gravity"
+        android:textColor="#ffffff"
+        android:textSize="25dip"
+        android:textStyle="bold" />
+
+    <Button
+        android:id="@+id/btnLogin"
+        android:layout_width="300dp"
+        android:layout_height="50dp"
+        android:layout_alignRight="@+id/loginPassword"
+        android:layout_below="@+id/login_error"
+        android:background="@drawable/button"
+        android:text="Login"
+        android:textColor="@android:color/white"
+        android:textSize="30sp" />
+
+</RelativeLayout>

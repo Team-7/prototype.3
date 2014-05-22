@@ -1,0 +1,510 @@
+/**
+ * 
+ */
+package com.dhliwayok.hopeworldwide;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import com.dhliwayok.hopeworldwide.R;
+
+import android.app.ActionBar;
+import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.database.Cursor;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+
+/**
+ * @author KudaD
+ *
+ */
+public class BMI_Activity extends Activity {
+	
+	private AutoCompleteTextView searchText;
+	private EditText height;
+	private EditText weight;
+	private Button search;
+	private Button calcBMI;
+	private HopeDbAdapter myDb;
+	private TextView childView;
+	private TextView ageView;
+	private TextView bmiView;
+	private TextView comment;
+	private TextView bmiComment;
+	private TextView currBMI;
+	private TextView hyt;
+	private TextView weit;
+	String txt;
+	private ArrayList <String> theArray;
+	private ArrayAdapter<String> adapter;
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		// TODO Auto-generated method stub
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.bmi);
+		
+
+		IntentFilter intentFilter = new IntentFilter();
+		intentFilter.addAction("CLEAR_STACK");
+		BroadcastReceiver r;
+		r = new ActivitiesBroadcastReceiver();
+		registerReceiver(r, intentFilter);
+		
+		myDb = new HopeDbAdapter(this);
+		
+		
+		searchText = (AutoCompleteTextView) findViewById(R.id.auto_names);
+		search = (Button) findViewById(R.id.button2);
+		hyt = (TextView) findViewById(R.id.textView1);
+		weit = (TextView) findViewById(R.id.weight);
+		childView = (TextView) findViewById(R.id.textView5);
+		ageView = (TextView) findViewById(R.id.textView6);
+		bmiView = (TextView) findViewById(R.id.textView7);
+		calcBMI = (Button) findViewById(R.id.button1);
+		height = (EditText) findViewById(R.id.heightvalue);
+		weight = (EditText) findViewById(R.id.editText2);
+		comment = (TextView) findViewById(R.id.textView8);
+		bmiComment = (TextView) findViewById(R.id.textView10);
+		currBMI = (TextView) findViewById(R.id.textView9);
+		
+		theArray = new ArrayList <String>();
+		theArray=myDb.childNames();		
+		adapter= new ArrayAdapter<String> (BMI_Activity.this,R.layout.dropdwn_textview ,theArray);
+		// specify the layout
+		searchText.setThreshold(2); // determine the number of character to enter before the guess
+		searchText.setAdapter(adapter); // link the ArrayList to the Adapter
+		
+		
+calcBMI.setOnClickListener(new OnClickListener() {
+	
+	@Override
+	public void onClick(View v) {
+		// TODO Auto-generated method stub
+		currBMI.setText("");
+		bmiComment.setText("");
+		comment.setText("");
+		hyt.setTextColor(Color.BLACK);
+		weit.setTextColor(Color.BLACK);
+		
+		txt = searchText.getText().toString();
+		if (!myDb.displayChildName(txt).equals("")) {
+			if (!height.getText().toString().equals("")
+					&& !weight.getText().toString().equals("")) {//values entered
+
+				if (!height.getText().toString().equals("0")) {//check if height not equals zero
+
+					if (!weight.getText().toString().equals("0")) {//check if height not equals zero
+
+						int h = Integer.parseInt(height.getText().toString());
+						double w = Double.parseDouble(weight.getText().toString());
+
+						if (w < 100 && h < 250) {
+							BMI myBmi = new BMI(h, w);
+							System.out.println(myBmi.getDate());
+							double score = myBmi.calculateBMI();
+							currBMI.setText("" + score);
+							checkScore(score);
+							int id = myDb.checkBMIrow() + 1;//checks the highest bmi row number in the database 
+							int myCentr = myDb.getChildCentre(txt);
+							int childId = Integer.parseInt(myDb.getChildId(txt));//gets searched child's id number
+							
+							if (!myDb.displayChildName(txt).equals("")) {
+
+								if (myDb.insertBMI(myBmi.getDate(), h, w,score) > 0){ //stores bmi score, height, weight 
+									Message.message(BMI_Activity.this, "BMI added successfully");
+									Cursor cursor;
+									cursor = myDb.getBMI();
+										if(syncBMI(cursor))
+											Message.message(BMI_Activity.this, "BMI Sync successful");
+								}
+								else
+									Message.message(BMI_Activity.this,
+											"BMI insert error");
+
+								if (myDb.insertChildBMI(childId, id, myCentr) > 0){//links child to calculated bmi
+									Message.message(BMI_Activity.this,
+											"Child updated successfully");
+									Cursor cursor;
+									cursor = myDb.getChildBMI();
+										if(syncChild_BMI(cursor))
+											Message.message(BMI_Activity.this, "Sync successful");
+								}
+								else
+									Message.message(BMI_Activity.this,
+											"Child update error");
+
+							}
+						} else {
+							comment.setTextColor(Color.RED);
+							hyt.setTextColor(Color.RED);
+							weit.setTextColor(Color.RED);
+							comment.setText("Please check your height or weight values");
+						}
+
+					} else {
+						comment.setTextColor(Color.RED);
+						weit.setTextColor(Color.RED);
+						comment.setText("Weight cannot be 0");
+					}
+				} else {
+					comment.setTextColor(Color.RED);
+					hyt.setTextColor(Color.RED);
+					comment.setText("Height cannot be 0");
+				}
+			} else if (height.getText().toString().equals("")) {//check if height field is empty
+				comment.setTextColor(Color.RED);
+				comment.setText("Enter height value");
+				hyt.setTextColor(Color.RED);
+			} else if (weight.getText().toString().equals("")) {//check if weight field is empty
+				comment.setTextColor(Color.RED);
+				comment.setText("Enter weight value");
+				weit.setTextColor(Color.RED);
+			}
+		}
+		else{
+			if (!height.getText().toString().equals("")
+					&& !weight.getText().toString().equals("")) {//values entered
+
+				if (!height.getText().toString().equals("0")) {//check if height not equals zero
+
+					if (!weight.getText().toString().equals("0")) {//check if height not equals zero
+
+						int h = Integer.parseInt(height.getText().toString());
+						double w = Double.parseDouble(weight.getText().toString());
+
+						if (w < 100 && h < 180) {
+							double myH = (h*h);
+							
+							double score= (w/myH)*10000;
+							currBMI.setText("" + BMI.round(score, 2, BigDecimal.ROUND_HALF_UP));
+							checkScore(score);
+						} else {
+							comment.setTextColor(Color.RED);
+							hyt.setTextColor(Color.RED);
+							weit.setTextColor(Color.RED);
+							comment.setText("Please check your height or weight values");
+						}
+
+					} else {
+						comment.setTextColor(Color.RED);
+						comment.setText("Weight cannot be 0");
+						weit.setTextColor(Color.RED);
+					}
+				} else {
+					comment.setTextColor(Color.RED);
+					comment.setText("Height cannot be 0");
+					hyt.setTextColor(Color.RED);
+				}
+			} else if (height.getText().toString().equals("")) {//check if height field is empty
+				comment.setTextColor(Color.RED);
+				comment.setText("Enter height value");
+				hyt.setTextColor(Color.RED);
+			} else if (weight.getText().toString().equals("")) {//check if weight field is empty
+				comment.setTextColor(Color.RED);
+				comment.setText("Enter weight value");
+				weit.setTextColor(Color.RED);
+			}
+			
+		}
+
+		
+		
+		
+	}
+});		
+
+search.setOnClickListener(new OnClickListener() {
+			
+			@Override
+			public void onClick(View v) {
+				// TODO Auto-generated method stub
+				height.setText("");
+				weight.setText("");//set all the fields and views to blank
+				currBMI.setText("");
+				bmiComment.setText("");
+				comment.setText("");
+				
+				txt = searchText.getText().toString();
+				if(!myDb.displayChildName(txt).equals("")){	//check name typed is in database
+					childView.setText(txt);
+					
+					if(!myDb.displayChildAge(txt).equals("")){//check for child's age
+						
+						String age = myDb.displayChildAge(txt);
+							ageView.setText(age);
+						}
+						else
+							ageView.setText("child has no age");
+					
+					if(!myDb.displayChildBMI(txt).equals("")){
+						String bmi = myDb.displayChildBMI(txt);//get child bmi information
+						double w = Double.parseDouble(bmi);
+						checkPrBMI(w);
+						//bmiView.setText(bmi);
+					}
+					else
+						bmiView.setText("No previous BMI");
+				}
+				else{
+					childView.setText("No child found");
+					ageView.setText("");
+					bmiView.setText("");
+					currBMI.setText("");
+					}
+			
+					
+			}
+		});
+		
+	}
+		
+	
+private void checkScore(double score){//checks which category bmi score belongs to 
+	
+	if(score > 0 && score < 19)
+	{  					
+		currBMI.setTextColor(Color.RED);
+		bmiComment.setTextColor(Color.RED);
+		bmiComment.setText("Under Weight");						
+	}
+	if(score >=19 && score < 24)
+	{ 			
+		currBMI.setTextColor(Color.BLUE);
+		bmiComment.setTextColor(Color.BLUE);
+		bmiComment.setText("Normal");						
+	}
+	
+	if(score >=24 && score < 30)
+	{  				
+		currBMI.setTextColor(Color.RED);
+		bmiComment.setTextColor(Color.RED);
+		bmiComment.setText("Over Weight");						
+	}
+	
+	if(score >=30 && score <=40)
+	{  				
+		currBMI.setTextColor(Color.RED);
+		bmiComment.setTextColor(Color.RED);
+		bmiComment.setText("Obese");						
+	}
+	
+	if(score > 40)
+	{  				
+		currBMI.setTextColor(Color.RED);
+		bmiComment.setTextColor(Color.RED);
+		bmiComment.setText("Morbidly Obese");
+	}	
+}
+
+
+private void checkPrBMI(double score){//checks which category bmi score belongs to     new
+	
+	if(score > 0 && score < 19)
+	{  					
+		bmiView.setTextColor(Color.RED);
+		bmiView.setText(score+ "   Under Weight");						
+	}
+	if(score >=19 && score < 24)
+	{ 			
+		bmiView.setTextColor(Color.BLUE);
+		bmiView.setText(score+ "   Normal");							
+	}
+	
+	if(score >=24 && score < 30)
+	{  				
+		bmiView.setTextColor(Color.RED);
+		bmiView.setText(score+ "  Over Weight");						
+	}
+	
+	if(score >=30 && score <=40)
+	{  			
+		bmiView.setTextColor(Color.RED);
+		bmiView.setText(score+ "   Obese");						
+	}
+	
+	if(score > 40)
+	{  				
+		bmiView.setTextColor(Color.RED);
+		bmiView.setText(score+ "   Morbidly Obese");
+	}	
+}
+
+class ActivitiesBroadcastReceiver extends BroadcastReceiver {
+	
+	@Override
+	public void onReceive(Context context, Intent intent) {
+		// TODO Auto-generated method stub
+		finish();
+	}
+}
+
+public boolean syncChild_BMI(Cursor cs){
+	
+	JSONArray jsonarray;
+	JSONObject json = new JSONObject();
+	boolean x = false;
+	
+	startManagingCursor(cs);  
+      if(cs!=null)  
+      {  
+           cs.moveToFirst();  
+           jsonarray = new JSONArray();  
+           while (cs.isAfterLast() == false) {  
+           //json = new JSONObject();  
+      try {  
+           json.put("child_id",cs.getInt(cs.getColumnIndex("_id")));  
+           json.put("BMI_id",cs.getInt(cs.getColumnIndex("_BMI_id")));  
+           json.put("centre_id",cs.getInt(cs.getColumnIndex("_Center_id"))); 
+           jsonarray.put(json);  
+           cs.moveToNext();  
+      }  
+      catch (Exception e) {  
+           Log.d("Android", "JSON Error"+e);  
+      }  
+           }  
+           try {  
+           // Create a new HttpClient and Post Header  
+           HttpClient httpclient = new DefaultHttpClient();  
+           HttpPost httppost = new HttpPost("http://10.0.2.2/sync/set_childBmi.php");  
+           // Post the data:  
+           StringEntity se = new StringEntity(jsonarray.toString());  
+           httppost.setEntity(se);  
+           httppost.setHeader("Accept", "application/json");  
+           httppost.setHeader("Content-type", "application/json");  
+           // Execute HTTP Post Request  
+           System.out.print(json);  
+           HttpResponse response = httpclient.execute(httppost);  
+           // for JSON:  
+           if(response != null)  
+           {  
+                InputStream is = response.getEntity().getContent();  
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is));  
+                StringBuilder sb = new StringBuilder();  
+                String line = null;  
+                try {  
+                     while ((line = reader.readLine()) != null) {  
+                     sb.append(line + "\n");  
+                     }  
+                     x = true;
+                } catch (IOException e) {  
+                     e.printStackTrace();  
+                     }   
+                finally {  
+                     try {  
+                          is.close();  
+                     } catch (IOException e) {  
+                                         e.printStackTrace();  
+                                    }  
+                               }  
+                          }  
+           }  
+           catch (ClientProtocolException e) {                 
+           } catch (IOException e) {   
+        }            
+      }  
+      cs.close();
+      return x;
+      
+}
+
+public boolean syncBMI(Cursor cs){
+	
+	JSONArray jsonarray;
+	JSONObject json = new JSONObject();
+	boolean x = false;
+	
+	startManagingCursor(cs);  
+      if(cs!=null)  
+      {  
+           cs.moveToFirst();  
+           jsonarray = new JSONArray();  
+           while (cs.isAfterLast() == false) {  
+           //json = new JSONObject();  
+      try {  
+    	  json.put("BMI_id",cs.getInt(cs.getColumnIndex("_BMI_id")));  
+           json.put("date",cs.getString(cs.getColumnIndex("Date")));  
+           json.put("height",cs.getInt(cs.getColumnIndex("Height")));  
+           json.put("weight",cs.getDouble(cs.getColumnIndex("Weight"))); 
+           json.put("score",cs.getDouble(cs.getColumnIndex("BMI_Score"))); 
+           jsonarray.put(json);  
+           cs.moveToNext();  
+      }  
+      catch (Exception e) {  
+           Log.d("Android", "JSON Error"+e);  
+      }  
+           }  
+           try {  
+           // Create a new HttpClient and Post Header  
+           HttpClient httpclient = new DefaultHttpClient();  
+           HttpPost httppost = new HttpPost("http://10.0.2.2/sync/set_Bmi.php");  
+           // Post the data:  
+           StringEntity se = new StringEntity(jsonarray.toString());  
+           httppost.setEntity(se);  
+           httppost.setHeader("Accept", "application/json");  
+           httppost.setHeader("Content-type", "application/json");  
+           // Execute HTTP Post Request  
+           System.out.print(json);  
+           HttpResponse response = httpclient.execute(httppost);  
+           // for JSON:  
+           if(response != null)  
+           {  
+                InputStream is = response.getEntity().getContent();  
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is));  
+                StringBuilder sb = new StringBuilder();  
+                String line = null;  
+                try {  
+                     while ((line = reader.readLine()) != null) {  
+                     sb.append(line + "\n");  
+                     }  
+                     x = true;
+                } catch (IOException e) {  
+                     e.printStackTrace();  
+                     }   
+                finally {  
+                     try {  
+                          is.close();  
+                     } catch (IOException e) {  
+                                         e.printStackTrace();  
+                                    }  
+                               }  
+                          }  
+           }  
+           catch (ClientProtocolException e) {                 
+           } catch (IOException e) {   
+        }            
+      }  
+      cs.close();
+      return x;
+      
+}
+
+}
+
+

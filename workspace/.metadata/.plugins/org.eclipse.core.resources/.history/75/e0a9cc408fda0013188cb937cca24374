@@ -1,0 +1,267 @@
+package com.dhliwayok.tipcalculator;
+
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.ActionBar;
+import android.support.v4.app.Fragment;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.app.Activity;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.SeekBar;
+import android.widget.SeekBar.OnSeekBarChangeListener;
+import android.widget.TextView;
+import android.os.Build;
+
+public class MainActivity extends Activity {
+	// constants used when saving/restoring UI state
+    private static final String BILL_TOTAL = "BILL_TOTAL";
+    private static final String CUSTOM_PERCENT = "CUSTOM_PERCENT";
+    private static final int THRESHOLD = 30;
+
+    private double currentBillTotal; // bill amount entered by the user
+    private int currentCustomPercent; // tip % set with the SeekBar
+
+    //view/widget (GUI component) references (not pointing at anything yet)
+    private EditText tip10EditText; // displays 10% tip
+    private EditText total10EditText; // displays total with 10% tip
+    private EditText tip12EditText; // displays 10% tip
+    private EditText total12EditText; // displays total with 10% tip
+    private EditText tip15EditText; // displays 15% tip
+    private EditText total15EditText; // displays total with 15% tip
+    private EditText billEditText; // accepts user input for bill total
+    private EditText tip20EditText; // displays 20% tip
+    private EditText total20EditText;  // displays total with 20% tip
+    private TextView customTipTextView; // displays custom tip percentage
+    private TextView output; // displays custom tip percentage
+    private EditText tipCustomEditText; // displays custom tip amount
+    private EditText totalCustomEditText; // displays total with custom tip
+    private SeekBar customSeekBar;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+		
+		 // check if app just started or is being restored from memory
+        if ( savedInstanceState == null ){ 			    // the app just started running
+            currentBillTotal = 0.0; 					// initialize the bill amount to zero
+            currentCustomPercent = 18; 				    // initialize the custom tip to 18%
+        }
+        else{ // app is being restored from memory, not executed from scratch
+            //initialize the bill amount to saved amount
+            currentBillTotal = savedInstanceState.getDouble(BILL_TOTAL);
+
+            //initialize the custom tip to saved tip percent
+            currentCustomPercent = savedInstanceState.getInt(CUSTOM_PERCENT);
+        }
+        
+     // get references to the 10%, 15% and 20% tip and total EditTexts
+        // now widgets are inflated
+        tip10EditText = (EditText) findViewById(R.id.tip10EditText);
+        total10EditText = (EditText) findViewById(R.id.total10EditText);
+        tip12EditText = (EditText) findViewById(R.id.tip12EditText);
+        total12EditText = (EditText) findViewById(R.id.total12EditText);
+        tip15EditText = (EditText) findViewById(R.id.tip15EditText);
+        total15EditText = (EditText) findViewById(R.id.total15EditText);
+        tip20EditText = (EditText) findViewById(R.id.tip20EditText);
+        total20EditText = (EditText) findViewById(R.id.total20EditText);
+        
+
+        // get the TextView displaying the custom tip percentage
+        customTipTextView = (TextView) findViewById(R.id.customTipTextView);
+        output = (TextView) findViewById(R.id.textView1);
+
+        // get the custom tip and total EditTexts
+        tipCustomEditText = (EditText) findViewById(R.id.tipCustomEditText);
+        totalCustomEditText = (EditText) findViewById(R.id.totalCustomEditText);
+        
+
+        // get billEditText and assign it a text changed listener object i.e. a TextWatcher
+        billEditText = (EditText) findViewById(R.id.billEditText);
+        //billEditText.setText(String.format("%.02f", currentBillTotal)); // demo only
+
+        billEditText.addTextChangedListener(billEditTextWatcher);
+
+
+
+        // get customSeekBar and assign it a seek bar changed listener object i.e. an OnSeekBarChanged
+        customSeekBar = (SeekBar) findViewById(R.id.customSeekBar);
+        //customSeekBar.setProgress(currentCustomPercent); // demo only
+
+        // using a named inner class
+        //sbListener customSeekBarListener2 = new sbListener(); //@@@@@
+        //customSeekBar.setOnSeekBarChangeListener(customSeekBarListener2); //@@@@@
+
+        // using an anonymous inner class
+        customSeekBar.setOnSeekBarChangeListener(customSeekBarListener); //#####
+	}
+	
+	// updates 10, 15 and 20 percent tip EditTexts
+    private void updateStandard(){
+        // calculate bill tip and total for 10% and display
+        double tenPercentTip = currentBillTotal * .1;
+        double tenPercentTotal = currentBillTotal + tenPercentTip;
+
+        tip10EditText.setText(String.format("%.02f", tenPercentTip));
+        total10EditText.setText(String.format("%.02f", tenPercentTotal));
+        
+        double twelvePercentTip = currentBillTotal * .1;
+        double twelvePercentTotal = currentBillTotal + twelvePercentTip;
+
+        tip12EditText.setText(String.format("%.02f", twelvePercentTip));
+        total12EditText.setText(String.format("%.02f", twelvePercentTotal));
+
+        // calculate bill tip and total for 15% and display
+        double fifteenPercentTip = currentBillTotal * .15;
+        double fifteenPercentTotal = currentBillTotal + fifteenPercentTip;
+
+        tip15EditText.setText(String.format("%.02f", fifteenPercentTip));
+        total15EditText.setText(String.format("%.02f", fifteenPercentTotal));
+
+        // calculate bill tip and total for 20% and display
+        double twentyPercentTip = currentBillTotal * .20;
+        double twentyPercentTotal = currentBillTotal + twentyPercentTip;
+
+        tip20EditText.setText(String.format("%.02f", twentyPercentTip));
+        total20EditText.setText(String.format("%.02f", twentyPercentTotal));
+    }
+
+ // updates the custom tip and total EditTexts
+    private void updateCustom(){
+        // set customTipTextView's text to match the position of the SeekBar
+        customTipTextView.setText(currentCustomPercent + "%");
+
+        // calculate bill tip and total for current custom % and display
+        double customTipAmount = currentBillTotal * currentCustomPercent * .01;
+        double customTotalAmount = currentBillTotal + customTipAmount;
+
+        tipCustomEditText.setText(String.format("%.02f", customTipAmount));
+        totalCustomEditText.setText(String.format("%.02f", customTotalAmount));
+    }
+
+    // save UI state values of billEditText and customSeekBar
+    // note: if you don't override onSaveInstanceState(...) UI will be saved anyway
+    // because the superclass's onSaveInstanceState(...) calls every view's onSaveInstanceState(...)
+    
+    @Override
+    protected void onSaveInstanceState(Bundle outState){
+        super.onSaveInstanceState(outState);
+
+        outState.putDouble(BILL_TOTAL, currentBillTotal);
+        outState.putInt(CUSTOM_PERCENT, currentCustomPercent);
+    }
+    
+    //##### creating a listener object for the seek bar using an ANONYMOUS inner class
+    private OnSeekBarChangeListener customSeekBarListener = new OnSeekBarChangeListener()
+    {
+
+        @Override
+        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser){
+            // sets currentCustomPercent to position of the SeekBar's thumb
+            currentCustomPercent = seekBar.getProgress();
+            updateCustom(); // update EditTexts for custom tip and total
+            
+            if(currentCustomPercent >= THRESHOLD){
+            	output.setTextColor(getResources().getColor(R.color.color));
+            	output.setText(getResources().getText(R.string.spender));;
+            	customTipTextView.setTextColor(getResources().getColor(R.color.color));
+            	tipCustomEditText.setTextColor(getResources().getColor(R.color.color));
+            	totalCustomEditText.setTextColor(getResources().getColor(R.color.color));
+            	output.setVisibility(TextView.VISIBLE);
+            }
+            else{
+            	output.setVisibility(TextView.INVISIBLE);
+            }
+        }
+
+        @Override
+        public void onStartTrackingTouch(SeekBar seekBar){
+        }
+
+        @Override
+        public void onStopTrackingTouch(SeekBar seekBar){
+        }
+    }; // end OnSeekBarChangeListener reference variable declaration and assignment
+    // #####
+
+    //##### creating a listener object for the an EditText using an ANONYMOUS inner class
+    // SYNTAX: TextWatcher is an interface, this syntax makes a new instance of an anonymous class
+    // which implements the TextWatcher interface
+    // this new object is pointed at by the reference variable, billEditTextWatcher
+    // this object is assigned to be billEditText's "TextChangedListener" (see above)
+    private TextWatcher billEditTextWatcher = new TextWatcher(){
+        // called when the user enters a number
+        @Override
+        public void onTextChanged(CharSequence s, int start, int before, int count){
+            // convert billEditText's text to a double
+            try{
+                currentBillTotal = Double.parseDouble(s.toString());
+            }
+            catch (NumberFormatException e){
+                currentBillTotal = 0.0; // default if an exception occurs
+            }
+
+            // update the standard and custom tip EditTexts
+            updateStandard(); 	// update the 10, 15 and 20% EditTexts
+            updateCustom(); 	// update the custom tip EditTexts
+        }
+
+        //must implement this method as part of TextWatcher interface promise,
+        //therefore must mention Editable, therefore must import Editable
+        @Override
+        public void afterTextChanged(Editable s){
+        }
+
+        @Override
+        public void beforeTextChanged(CharSequence s, int start, int count, int after){
+        }
+    }; // end billEditTextWatcher reference variable declaration and assignment
+
+    // @@@@@ ##### creating a listener object CLASS for the seek bar using a NAMED inner class
+    private class sbListener implements OnSeekBarChangeListener{
+        @Override
+        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser){
+            // sets currentCustomPercent to position of the SeekBar's thumb
+            currentCustomPercent = seekBar.getProgress();
+            updateCustom(); 	// update EditTexts for custom tip and total, standards unchanged
+        }
+
+        @Override
+        public void onStartTrackingTouch(SeekBar seekBar){
+        }
+
+        @Override
+        public void onStopTrackingTouch(SeekBar seekBar){
+        }
+    }
+    // @@@@@
+    
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.main, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// Handle action bar item clicks here. The action bar will
+		// automatically handle clicks on the Home/Up button, so long
+		// as you specify a parent activity in AndroidManifest.xml.
+		int id = item.getItemId();
+		if (id == R.id.action_settings) {
+			return true;
+		}
+		return super.onOptionsItemSelected(item);
+	}
+
+
+}

@@ -1,0 +1,66 @@
+package com.dhliwayok.tipcalculator;
+
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.ActionBar;
+import android.support.v4.app.Fragment;
+import android.app.Activity;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.EditText;
+import android.widget.SeekBar;
+import android.widget.TextView;
+import android.os.Build;
+
+public class MainActivity extends Activity {
+	// constants used when saving/restoring UI state
+    private static final String BILL_TOTAL = "BILL_TOTAL";
+    private static final String CUSTOM_PERCENT = "CUSTOM_PERCENT";
+
+    private double currentBillTotal; // bill amount entered by the user
+    private int currentCustomPercent; // tip % set with the SeekBar
+
+    //view/widget (GUI component) references (not pointing at anything yet)
+    private EditText tip10EditText; // displays 10% tip
+    private EditText total10EditText; // displays total with 10% tip
+    private EditText tip15EditText; // displays 15% tip
+    private EditText total15EditText; // displays total with 15% tip
+    private EditText billEditText; // accepts user input for bill total
+    private EditText tip20EditText; // displays 20% tip
+    private EditText total20EditText;  // displays total with 20% tip
+    private TextView customTipTextView; // displays custom tip percentage
+    private EditText tipCustomEditText; // displays custom tip amount
+    private EditText totalCustomEditText; // displays total with custom tip
+    private SeekBar customSeekBar;
+
+	@Override
+	protected void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.main, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// Handle action bar item clicks here. The action bar will
+		// automatically handle clicks on the Home/Up button, so long
+		// as you specify a parent activity in AndroidManifest.xml.
+		int id = item.getItemId();
+		if (id == R.id.action_settings) {
+			return true;
+		}
+		return super.onOptionsItemSelected(item);
+	}
+
+
+}
